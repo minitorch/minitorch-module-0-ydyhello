@@ -161,15 +161,13 @@ def test_distribute(x: float, y: float, z: float) -> None:
 
 
 @pytest.mark.task0_2
-@given(small_floats)
-def test_other(a: float) -> None:
+@given(small_floats, small_floats)
+def test_other(a:float, b:float) -> None:
     """
     Write a test that ensures some other property holds for your functions.
     """
     # TODO: Implement for Task 0.2.
-    if a != 0.0:
-        assert_close(inv(a) * a, 1.0)
-        assert_close(inv(inv(a)), a)  # 还原律
+    assert mul(a, b) == mul(b, a)
     # raise NotImplementedError("Need to implement for Task 0.2")
 
 
