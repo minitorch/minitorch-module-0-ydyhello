@@ -162,6 +162,7 @@ def test_distribute(x: float, y: float, z: float) -> None:
 
 @pytest.mark.task0_2
 @given(small_floats, small_floats)
+# 想不出来其他的了
 def test_other(a:float, b:float) -> None:
     """
     Write a test that ensures some other property holds for your functions.
@@ -197,7 +198,11 @@ def test_sum_distribute(ls1: List[float], ls2: List[float]) -> None:
     is the same as the sum of each element of `ls1` plus each element of `ls2`.
     """
     # TODO: Implement for Task 0.3.
-    raise NotImplementedError("Need to implement for Task 0.3")
+    l1 = addLists(ls1, ls2)
+    l2 = [x + y for x, y in zip(ls1, ls2)]
+    for i in range(len(l1)):
+        assert_close(l1[i], l2[i])
+    # raise NotImplementedError("Need to implement for Task 0.3")
 
 
 @pytest.mark.task0_3
