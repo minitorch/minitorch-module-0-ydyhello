@@ -20,21 +20,25 @@ class Module:
         return self.__dict__["_modules"].values()
 
     def train(self):
+        # 将当前模块及其所有子模块切换到训练模式，以便在模型训练时使用
         "Set the mode of this module and all descendent modules to `train`."
         # TODO: Implement for Task 0.4.
-        self.training = True
+        self.training = True # 切换到训练模式
         for child_ in self._modules:
-            self._modules[child_].train()
+            self._modules[child_].train() # 对每个子模块调用 train 方法
         # raise NotImplementedError('Need to implement for Task 0.4')
 
     def eval(self):
+        # 评估模型
         "Set the mode of this module and all descendent modules to `eval`."
         # TODO: Implement for Task 0.4.
         self.training = False
         for child_ in self._modules:
             self._modules[child_].eval()
 
-    def named_parameters(self):
+    def named_parameters(self): 
+        # 收集当前模块及其所有子模块的参数
+        # 并以层次结构的方式返回参数的名称和对应的 Parameter 对象
         """
         Collect all the parameters of this module and its descendents.
 
@@ -42,13 +46,13 @@ class Module:
             list of pairs: Contains the name and :class:`Parameter` of each ancestor parameter.
         """
         # TODO: Implement for Task 0.4.
-        res = []
+        res = [] # 存储参数的名称和 Parameter 对象
         for k, v in self._parameters.items():
-            res.append((k, v))
+            res.append((k, v)) # 参数的名称 k 和 Parameter 对象 v 添加到列表 res 中
 
         for child_ in self._modules:
-            child_params = self._modules[child_].named_parameters()
-            for item in child_params:
+            child_params = self._modules[child_].named_parameters() # 获取子模块及其子模块的参数列表
+            for item in child_params: # 将子模块的参数添加到 res 列表中
                 res.append((child_ + '.' + item[0], item[1]))
 
         return res
@@ -56,8 +60,10 @@ class Module:
         # raise NotImplementedError('Need to implement for Task 0.4')
 
     def parameters(self):
+        # 遍历当前模块及其所有子模块的参数，并以列表形式返回这些参数
         "Enumerate over all the parameters of this module and its descendents."
         # TODO: Implement for Task 0.4.
+        # 初始化为当前模块的 _parameters 字典中所有参数的值（Parameter 对象）构成的列表
         res = list(self._parameters.values())
 
         for child_ in self._modules:

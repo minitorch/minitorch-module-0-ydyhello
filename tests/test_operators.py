@@ -201,7 +201,7 @@ def test_sum_distribute(ls1: List[float], ls2: List[float]) -> None:
     l1 = addLists(ls1, ls2)
     l2 = [x + y for x, y in zip(ls1, ls2)]
     for i in range(len(l1)):
-        assert_close(l1[i], l2[i])
+        assert_close(l1[i], l2[i]) # 比较两个浮点数是否接近
     # raise NotImplementedError("Need to implement for Task 0.3")
 
 
