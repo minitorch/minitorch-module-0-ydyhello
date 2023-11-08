@@ -1,268 +1,192 @@
-from minitorch.operators import (
-    mul,
-    add,
-    neg,
-    relu,
-    addLists,
-    prod,
-    negList,
-    id,
-    inv,
-    lt,
-    eq,
-    max,
-    sigmoid,
-    relu_back,
-    log_back,
-    inv_back,
-    sum,
-)
-from hypothesis import given
-from hypothesis.strategies import lists
-from .strategies import small_floats, assert_close
-import pytest
-from minitorch import MathTest
+## Task 0.4
+## Modules
 
 
-# ## Task 0.1 Basic hypothesis tests.
-
-
-@pytest.mark.task0_1
-@given(small_floats, small_floats)
-def test_same_as_python(x, y):
-    "Check that the main operators all return the same value of the python version"
-    assert_close(mul(x, y), x * y)
-    assert_close(add(x, y), x + y)
-    assert_close(neg(x), -x)
-    assert_close(max(x, y), x if x > y else y)
-    if x != 0.0:
-        assert_close(inv(x), 1.0 / x)
-
-
-@pytest.mark.task0_1
-@given(small_floats)
-def test_relu(a):
-    if a > 0:
-        assert relu(a) == a
-    if a < 0:
-        assert relu(a) == 0.0
-
-
-@pytest.mark.task0_1
-@given(small_floats, small_floats)
-def test_relu_back(a, b):
-    if a > 0:
-        assert relu_back(a, b) == b
-    if a < 0:
-        assert relu_back(a, b) == 0.0
-
-
-@pytest.mark.task0_1
-@given(small_floats)
-def test_id(a):
-    assert id(a) == a
-
-
-@pytest.mark.task0_1
-@given(small_floats)
-def test_lt(a):
-    "Check that a - 1.0 is always less than a"
-    assert lt(a - 1.0, a) == 1.0
-    assert lt(a, a - 1.0) == 0.0
-
-
-@pytest.mark.task0_1
-@given(small_floats)
-def test_max(a):
-    assert max(a - 1.0, a) == a
-    assert max(a, a - 1.0) == a
-    assert max(a + 1.0, a) == a + 1.0
-    assert max(a, a + 1.0) == a + 1.0
-
-
-@pytest.mark.task0_1
-@given(small_floats)
-def test_eq(a):
-    assert eq(a, a) == 1.0
-    assert eq(a, a - 1.0) == 0.0
-    assert eq(a, a + 1.0) == 0.0
-
-
-# ## Task 0.2 - Property Testing
-
-# Implement the following property checks
-# that ensure that your operators obey basic
-# mathematical rules.
-
-
-@pytest.mark.task0_2
-@given(small_floats)
-def test_sigmoid(a):
+class Module:
     """
-    Check properties of the sigmoid function, specifically
-    * It is always between 0.0 and 1.0.
-    * one minus sigmoid is the same as negative sigmoid
-    * It crosses 0 at 0.5
-    * it is  strictly increasing.
-
-    Args:
-        a (float): small floats.
+    Attributes:
+        _modules (dict of name x :class:`Module`): Storage of the child modules
+        _parameters (dict of name x :class:`Parameter`): Storage of the module's parameters
+        mode (string): Mode of operation, can be {"train", "eval"}.
 
     """
-    # TODO: Implement for Task 0.2.
-    assert sigmoid(a) >= 0.0
-    assert sigmoid(a) <= 1.0
-    assert_close(1 - sigmoid(a), sigmoid(-a))
-    assert_close(sigmoid(0), 0.5)
-    assert sigmoid(a + 1.0) >= sigmoid(a)
+
+    def __init__(self):
+        self._modules = {}
+        self._parameters = {}
+        self.mode = "train"
+
+    def modules(self):
+        "Return the child modules of this module."
+        return self.__dict__["_modules"].values()
+
+    def train(self):
+        "Set the mode of this module and all descendent modules to `train`."
+        self.mode = "train"
+        if len(self._modules) != 0:
+            for key in self._modules:
+                self._modules[key].train()
+
+            # if(self._modules[key]    )
+
+        # self.__dict__["_modules"].values().mode = "train"
+
+        # for m in self._modules:
+        #     m.mode = "train"
+
+        # TODO: Implement for Task 0.4.
+        # raise NotImplementedError("Need to implement for Task 0.4")
+
+    def eval(self):
+        "Set the mode of this module and all descendent modules to `eval`."
+        # TODO: Implement for Task 0.4.
+        self.mode = "eval"
+        if len(self._modules) != 0:
+            for key in self._modules:
+                self._modules[key].eval()
+        # self.__dict__["_modules"].values().mode = "eval"
+
+        # for m in self._modules:
+        #     m.mode = "eval"
+        # raise NotImplementedError("Need to implement for Task 0.4")
+
+    def named_parameters(self):
+        """
+        Collect all the parameters of this module and its descendents.
 
 
-@pytest.mark.task0_2
-@given(small_floats, small_floats, small_floats)
-def test_transitive(a, b, c):
-    "Test the transitive property of less-than (a < b and b < c implies a < c)"
-    # TODO: Implement for Task 0.2.
-    if lt(a, b) and lt(b, c):
-        assert lt(a, c)
-    elif lt(a, c) and lt(c, b):
-        assert lt(a, b)
-    elif lt(b, c) and lt(c, a):
-        assert lt(b, a)
+        Returns:
+            dict: Each name (key) and :class:`Parameter` (value) under this module.
+        """
+        if len(self._modules) == 0:
+            new_dict = {}
+            for p in self._parameters:
+                new_dict[p] = self._parameters[p]
+            return new_dict
+        else:
+            this_para = {}
+            for key in self._parameters:
+                this_para[key] = self._parameters[key]
+            for key in self._modules:
+                child_para = self._modules[key].named_parameters()
+                for name in child_para:
+                    this_para[key + "." + name] = child_para[name]
+            return this_para
+
+        # if(len(self._modules) == 0):
+        #     new_dict = {}
+        #     for p in self._parameters:
+        #         new_dict[p] = self._parameters[p]
+        #     return(new_dict)
+        # else:
+        #     this_para = {}
+        #     for key in self._parameters:
+        #         this_para[key] = self._parameters[key]
+
+        #     for key in self._modules:
+        #         child_para = self._modules[key].named_parameters()
+        #         for p in self._parameters:
+        #             child_para[p] = self._parameters[p]
+        #     return child_para
+        # if(len(self._modules) != 0):
+        #         new_dict = self._modules[key].named_parameters()
+        #         for p in self._parameters:
+        #             new_dict[p] = self._parameters[p]
+        # else:
+        #     new_dict = {}
+
+        # return(new_dict)
+
+        # TODO: Implement for Task 0.4.
+        # raise NotImplementedError("Need to implement for Task 0.4")
+
+    def parameters(self):
+        return self.named_parameters().values()
+
+    def add_parameter(self, k, v):
+        """
+        Manually add a parameter. Useful helper for scalar parameters.
+
+        Args:
+            k (str): Local name of the parameter.
+            v (value): Value for the parameter.
+
+        Returns:
+            Parameter: Newly created parameter.
+        """
+        val = Parameter(v)
+        self.__dict__["_parameters"][k] = val
+        return val
+
+    def __setattr__(self, key, val):
+        if isinstance(val, Parameter):
+            self.__dict__["_parameters"][key] = val
+        elif isinstance(val, Module):
+            self.__dict__["_modules"][key] = val
+        else:
+            super().__setattr__(key, val)
+
+    def __getattr__(self, key):
+        if key in self.__dict__["_parameters"]:
+            return self.__dict__["_parameters"][key]
+
+        if key in self.__dict__["_modules"]:
+            return self.__dict__["_modules"][key]
+
+        return self.__getattribute__(key)
+
+    def __call__(self, *args, **kwargs):
+        return self.forward(*args, **kwargs)
+
+    def forward(self):
+        assert False, "Not Implemented"
+
+    def __repr__(self):
+        def _addindent(s_, numSpaces):
+            s = s_.split("\n")
+            if len(s) == 1:
+                return s_
+            first = s.pop(0)
+            s = [(numSpaces * " ") + line for line in s]
+            s = "\n".join(s)
+            s = first + "\n" + s
+            return s
+
+        child_lines = []
+
+        for key, module in self._modules.items():
+            mod_str = repr(module)
+            mod_str = _addindent(mod_str, 2)
+            child_lines.append("(" + key + "): " + mod_str)
+        lines = child_lines
+
+        main_str = self.__class__.__name__ + "("
+        if lines:
+            # simple one-liner info, which most builtin Modules will use
+            main_str += "\n  " + "\n  ".join(lines) + "\n"
+
+        main_str += ")"
+        return main_str
 
 
-@pytest.mark.task0_2
-@given(small_floats, small_floats)
-def test_symmetric(a, b):
+class Parameter:
     """
-    Write a test that ensures that :func:`minitorch.operators.mul` is symmetric, i.e.
-    gives the same value regardless of the order of its input.
+    A Parameter is a special container stored in a :class:`Module`.
 
-    Args:
-        a (float): small floats.
-        b (float): small floats.
-
+    It is designed to hold a :class:`Variable`, but we allow it to hold
+    any value for testing.
     """
-    # TODO: Implement for Task 0.2.
-    assert_close(mul(a, b), mul(b, a))
-    assert_close(mul(-a, b), mul(-b, a))
-    assert_close(mul(a, 0.0), mul(0.0, a))
 
+    def __init__(self, x=None):
+        self.value = x
+        if hasattr(x, "requires_grad_"):
+            self.value.requires_grad_(True)
 
-@pytest.mark.task0_2
-@given(small_floats, small_floats, small_floats)
-def test_distribute(a, b, c):
-    r"""
-    Write a test that ensures that your operators distribute, i.e.
-    :math:`z \times (x + y) = z \times x + z \times y`
+    def update(self, x):
+        "Update the parameter value."
+        self.value = x
+        if hasattr(x, "requires_grad_"):
+            self.value.requires_grad_(True)
 
-    Args:
-        a (float): small floats.
-        b (float): small floats.
-        c (float): small floats.
-
-    """
-    # TODO: Implement for Task 0.2.
-    assert_close(mul(c, add(a, b)), add(mul(c, a), mul(c, b)))
-
-
-@pytest.mark.task0_2
-@given(small_floats)
-def test_other(a):
-    """
-    Write a test that ensures some other property holds for your functions.
-
-    Args:
-        a (float): small floats.
-
-    """
-    # TODO: Implement for Task 0.2.
-    # assert_close(log(exp(a)), a)
-    if a != 0.0:
-        assert_close(inv(a) * a, 1.0)
-        assert_close(inv(inv(a)), a)  # 还原律
-
-
-# ## Task 0.3  - Higher-order functions
-
-# These tests check that your higher-order functions obey basic
-# properties.
-
-
-@pytest.mark.task0_3
-@given(small_floats, small_floats, small_floats, small_floats)
-def test_zip_with(a, b, c, d):
-    x1, x2 = addLists([a, b], [c, d])
-    y1, y2 = a + c, b + d
-    assert_close(x1, y1)
-    assert_close(x2, y2)
-
-
-@pytest.mark.task0_3
-@given(
-    lists(small_floats, min_size=5, max_size=5),
-    lists(small_floats, min_size=5, max_size=5),
-)
-def test_sum_distribute(ls1, ls2):
-    """
-    Write a test that ensures that the sum of `ls1` plus the sum of `ls2`
-    is the same as the sum of each element of `ls1` plus each element of `ls2`.
-
-    Args:
-        ls1 (list): list with numbers.
-        ls2 (list): list with numbers.
-
-    """
-    # TODO: Implement for Task 0.3.
-    l1 = addLists(ls1, ls2)
-    l2 = [x + y for x, y in zip(ls1, ls2)]
-    for i in range(len(l1)):
-        assert_close(l1[i], l2[i])
-
-
-@pytest.mark.task0_3
-@given(lists(small_floats))
-def test_sum(ls):
-    assert_close(sum(ls), sum(ls))
-
-
-@pytest.mark.task0_3
-@given(small_floats, small_floats, small_floats)
-def test_prod(x, y, z):
-    assert_close(prod([x, y, z]), x * y * z)
-
-
-@pytest.mark.task0_3
-@given(lists(small_floats))
-def test_negList(ls):
-    check = negList(ls)
-    for i in range(len(ls)):
-        assert_close(check[i], -ls[i])
-
-
-# ## Generic mathematical tests
-
-# For each unit this generic set of mathematical tests will run.
-
-
-one_arg, two_arg, _ = MathTest._tests()
-
-
-@given(small_floats)
-@pytest.mark.parametrize("fn", one_arg)
-def test_one_args(fn, t1):
-    name, base_fn, _ = fn
-    base_fn(t1)
-
-
-@given(small_floats, small_floats)
-@pytest.mark.parametrize("fn", two_arg)
-def test_two_args(fn, t1, t2):
-    name, base_fn, _ = fn
-    base_fn(t1, t2)
-
-
-@given(small_floats, small_floats)
-def test_backs(a, b):
-    relu_back(a, b)
-    inv_back(a + 2.4, b)
-    log_back(abs(a) + 4, b)
+    def __repr__(self):
+        return repr(self.value)
